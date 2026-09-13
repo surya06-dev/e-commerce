@@ -1,0 +1,133 @@
+version: "3.8"
+
+networks:
+  microservices-net:
+    driver: bridge
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: shared-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - microservices-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    # NOTE: for real database-per-service isolation, run separate
+    # mongo containers/URIs per service. One instance here just
+    # keeps this demo simple -- each service still uses its own
+    # database NAME (see each service's .env.example).
+
+  frontend-react:
+    build: ./frontend-react
+    ports:
+      - "3000:3000"
+    networks:
+      - microservices-net
+    depends_on:
+      - api-gateway
+
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "4000:4000"
+    networks:
+      - microservices-net
+    environment:
+      - PORT=4000
+      - USER_SERVICE_URL=http://user-service:4001
+      - PRODUCT_SERVICE_URL=http://product-service:4002
+      - ORDER_SERVICE_URL=http://order-service:4003
+      - PAYMENT_SERVICE_URL=http://payment-service:4004
+      - INVENTORY_SERVICE_URL=http://inventory-service:4005
+      - NOTIFICATION_SERVICE_URL=http://notification-service:4006
+    depends_on:
+      - user-service
+      - product-service
+      - order-service
+      - payment-service
+      - inventory-service
+      - notification-service
+
+  user-service:
+    build: ./user-service
+    ports: ["4001:4001"]
+    networks:
+      - microservices-net
+    environment:
+      - PORT=4001
+      - MONGO_URI=mongodb://mongo:27017/user_db
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  product-service:
+    build: ./product-service
+    ports: ["4002:4002"]
+    networks:
+      - microservices-net
+    environment:
+      - PORT=4002
+      - MONGO_URI=mongodb://mongo:27017/product_db
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  order-service:
+    build: ./order-service
+    ports: ["4003:4003"]
+    networks:
+      - microservices-net
+    environment:
+      - PORT=4003
+      - MONGO_URI=mongodb://mongo:27017/order_db
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  payment-service:
+    build: ./payment-service
+    ports: ["4004:4004"]
+    networks:
+      - microservices-net
+    environment:
+      - PORT=4004
+      - MONGO_URI=mongodb://mongo:27017/payment_db
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  inventory-service:
+    build: ./inventory-service
+    ports: ["4005:4005", "9464:9464" ]
+    networks:
+      - microservices-net
+    environment:
+      - PORT=4005
+      - MONGO_URI=mongodb://mongo:27017/inventory_db
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  notification-service:
+    build: ./notification-service
+    ports: ["4006:4006"]
+    networks:
+      - microservices-net
+    environment:
+      - PORT=4006
+      - MONGO_URI=mongodb://mongo:27017/notification_db
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
+

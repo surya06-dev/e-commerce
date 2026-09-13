@@ -1,0 +1,32 @@
+# Requires an ingress controller in the cluster (e.g. ingress-nginx).
+# Replace host with your real domain, and adjust the annotation/class if
+# you're using a different controller (Traefik, AWS ALB, GKE, etc).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: microservices-ingress
+  namespace: microservices
+  annotations:
+    # For automatic TLS via cert-manager, uncomment and set an Issuer:
+    # cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: nginx
+  rules:
+    # - host: microservices.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port: { number: 4000 }
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-react
+                port: { number: 80 }
+  # tls:
+  #   - hosts: ["microservices.example.com"]
+  #     secretName: microservices-tls

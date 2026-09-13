@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-react
+  namespace: microservices
+  labels: { app: frontend-react }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: frontend-react }
+  template:
+    metadata:
+      labels: { app: frontend-react }
+    spec:
+      imagePullSecrets:
+        - name: ghcr-creds # only needed if your GHCR images/packages are private -- see README
+      containers:
+        - name: frontend-react
+          image: ${IMAGE_BASE}/frontend-react:${IMAGE_TAG}
+          ports:
+            - containerPort: 80
+          resources:
+            requests: { cpu: "25m", memory: "32Mi" }
+            limits:   { cpu: "100m", memory: "128Mi" }
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            initialDelaySeconds: 3
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-react
+  namespace: microservices
+spec:
+  selector: { app: frontend-react }
+  ports:
+    - port: 80
+      targetPort: 80
