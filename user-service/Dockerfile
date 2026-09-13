@@ -5,4 +5,4 @@ RUN npm install --production
 COPY . .
 EXPOSE 4001
 EXPOSE 9464
-CMD ["node", "server.js"]
+CMD ["node", "start"]
