@@ -5,4 +5,4 @@ RUN npm install --production
 COPY . .
 EXPOSE 4004
 EXPOSE 9464
-CMD ["node", "start"]
+CMD ["npm", "start"]
