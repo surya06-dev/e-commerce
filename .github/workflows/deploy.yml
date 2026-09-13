@@ -19,68 +19,23 @@ env:
 
 jobs:
 
-  # ==========================================================
-  # 1. Detect which services changed
-  # ==========================================================
-  changes:
-    name: Detect Changed Services
-    runs-on: ubuntu-latest
-
-    outputs:
-      services: ${{ steps.filter.outputs.changes }}
-
-    steps:
-
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Detect changed services
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          list-files: none
-          filters: |
-            api-gateway:
-              - 'api-gateway/**'
-
-            user-service:
-              - 'user-service/**'
-
-            product-service:
-              - 'product-service/**'
-
-            order-service:
-              - 'order-service/**'
-
-            payment-service:
-              - 'payment-service/**'
-
-            inventory-service:
-              - 'inventory-service/**'
-
-            notification-service:
-              - 'notification-service/**'
-
-            frontend:
-              - 'frontend/**'
-
-  # ==========================================================
-  # 2. Build / Scan only changed services
-  # ==========================================================
   build-and-scan:
 
     name: ${{ matrix.service }}
-    needs: changes
-
-    if: needs.changes.outputs.services != '[]'
-
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
-
       matrix:
-        service: ${{ fromJSON(needs.changes.outputs.services) }}
+        service:
+          - api-gateway
+          - user-service
+          - product-service
+          - order-service
+          - payment-service
+          - inventory-service
+          - notification-service
+          - frontend
 
     steps:
 
@@ -91,7 +46,7 @@ jobs:
         uses: actions/checkout@v4
 
       # --------------------------------------------------
-      # 2. Gitleaks
+      # 2. Gitleaks - Secret scanning
       # --------------------------------------------------
       - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
@@ -172,7 +127,7 @@ jobs:
             ${{ steps.image.outputs.image }}
 
       # --------------------------------------------------
-      # 11. Trivy image scan
+      # 11. Trivy Docker image scan
       # --------------------------------------------------
       - name: Trivy image scan
         uses: aquasecurity/trivy-action@master
